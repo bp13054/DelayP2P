@@ -84,8 +84,8 @@ public class SntpClient
             buffer[0] = NTP_MODE_CLIENT | (NTP_VERSION << 3);
 
             // get current time and write it to the request packet
-            long requestTime = System.currentTimeMillis();
-            long requestTicks = SystemClock.elapsedRealtime();
+            long requestTime = System.currentTimeMillis();//NTPサーバに接続する時刻
+            long requestTicks = SystemClock.elapsedRealtime();//これを起動してからの経過時間（NTPサーバ）に接続しに行く直前
             writeTimeStamp(buffer, TRANSMIT_TIME_OFFSET, requestTime);
 
             socket.send(request);
@@ -93,8 +93,8 @@ public class SntpClient
             // read the response
             DatagramPacket response = new DatagramPacket(buffer, buffer.length);
             socket.receive(response);
-            long responseTicks = SystemClock.elapsedRealtime();
-            long responseTime = requestTime + (responseTicks - requestTicks);
+            long responseTicks = SystemClock.elapsedRealtime();//NTPサーバから時刻を取得した時刻までの経過時間
+            long responseTime = requestTime + (responseTicks - requestTicks);//時刻を要求した時点の時刻からかかった時間
 
             // extract the results
             long originateTime = readTimeStamp(buffer, ORIGINATE_TIME_OFFSET);

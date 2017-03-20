@@ -7,7 +7,7 @@ package delayp2p.com.delayp2p;
 import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.util.Log;
-import java.util.Date;
+
 import java.util.Calendar;
 
 /**
@@ -37,9 +37,12 @@ public class SntpTimeUpdateAsyncTask extends AsyncTask<String, String, Integer> 
 
         SntpClient sntp = new SntpClient();
         int result = RET_ERROR_SNTP;
-        if (sntp.requestTime(url, 20000))
+        if (sntp.requestTime(url, 100))
         {
+            //getNtpTime:NTPサーバから得られた時間
+
              ntpNow = sntp.getNtpTime() + SystemClock.elapsedRealtime() - sntp.getNtpTimeReference();
+            //ntpNow = sntp.getNtpTime();
 
             long localNow = Calendar.getInstance().getTime().getTime();
             result = (int)ntpNow;
@@ -60,8 +63,9 @@ public class SntpTimeUpdateAsyncTask extends AsyncTask<String, String, Integer> 
      */
     @Override
     protected void onPostExecute(Integer result) {
-        Date d = new Date(ntpNow);
-        Log.d("ntpTime",""+d);
+        SetDate date = new SetDate();
+        String tmp = date.convertLong(ntpNow);
+        Log.d("ntpTime",tmp);
 
 //        if (result != RET_ERROR_SNTP)
 //        {

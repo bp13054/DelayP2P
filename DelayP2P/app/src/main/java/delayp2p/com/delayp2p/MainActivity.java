@@ -158,6 +158,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 /********************************************LocationListenerのoverride************************************************************/
     @Override
     public void onLocationChanged(Location geo) {
+        SetDate d = new SetDate();
+        String t = d.convertLong(System.currentTimeMillis());
+        //Log.d("端末Time",t);
         Log.d("test","1");
         if(geo.getProvider().equals(LocationManager.GPS_PROVIDER)||
                 geo.getTime()-lastUpdate>30 ||
@@ -177,8 +180,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             SntpTimeUpdateAsyncTask task = new SntpTimeUpdateAsyncTask();
             task.execute();
 
+            SetDate date = new SetDate();
+            String tmp = date.convertLong(getLocation().getTime());
+            Log.d("GPSTime",tmp);
+Log.d("MYTTime",t);
 
-            latLongTime.setText("緯度:"+getLocation().getLatitude()+", 経度:"+getLocation().getLongitude()+", 時間:"+getLocation().getTime());
+
+            latLongTime.setText("緯度:"+getLocation().getLatitude()+", 経度:"+getLocation().getLongitude()+", GPS時間:"+tmp+",端末時間"+t);
         }
         lastUpdate=location.getTime();
         lastProvider=location.getProvider();
