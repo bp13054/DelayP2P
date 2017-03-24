@@ -1,28 +1,31 @@
 package delayp2p.com.delayp2p;
 
-/**
- * Created by yusuke on 2017/03/19.
- */
-
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.util.Log;
 
 import java.util.Calendar;
 
-/**
- * NTP時刻非同期取得タスク
- */
+
+
 public class SntpTimeUpdateAsyncTask extends AsyncTask<String, String, Integer> {
+
     private static final int RET_ERROR_SNTP = 0xFFFFFFFF;
-    long ntpNow = 0;
+    private AsyncTaskCallbacks callback = null;
+
+
+    // コンストラクタ
+    public SntpTimeUpdateAsyncTask(AsyncTaskCallbacks callback) {
+        this.callback = callback;//MainActivity側のAsnycTaskCallback情報を取得
+    }
+
+
     /**
      * 更新前処理
      */
     @Override
     protected void onPreExecute() {
-
-        //m_ntpSabun = 0;
     }
 
     /**
@@ -37,24 +40,18 @@ public class SntpTimeUpdateAsyncTask extends AsyncTask<String, String, Integer> 
 
         SntpClient sntp = new SntpClient();
         int result = RET_ERROR_SNTP;
-        if (sntp.requestTime(url, 100))
-        {
-            //getNtpTime:NTPサーバから得られた時間
+        for(int count = 1;count<=10;count++) {
+            if (sntp.requestTime(url, 10000)) {
+                long ntpNow = sntp.getNtpTime() + SystemClock.elapsedRealtime() - sntp.getNtpTimeReference();
+                long localNow = Calendar.getInstance().getTime().getTime();
+                result = result + (int) (localNow - ntpNow);
 
-             ntpNow = sntp.getNtpTime() + SystemClock.elapsedRealtime() - sntp.getNtpTimeReference();
-            //ntpNow = sntp.getNtpTime();
-
-            long localNow = Calendar.getInstance().getTime().getTime();
-            result = (int)ntpNow;
-            //result = (int)(localNow - ntpNow);
-            //PSDebug.d("NT時刻取得成功 差分時刻=" + result);
+            } else {
+                result = RET_ERROR_SNTP;
+                break;
+            }
         }
-        else
-        {
-           Log.d("ntpTime","NTP時刻取得失敗");
-            result = RET_ERROR_SNTP;
-        }
-        return result;
+        return result/10;//十回計測した平均
     }
 
     /**
@@ -63,19 +60,14 @@ public class SntpTimeUpdateAsyncTask extends AsyncTask<String, String, Integer> 
      */
     @Override
     protected void onPostExecute(Integer result) {
-        SetDate date = new SetDate();
-        String tmp = date.convertLong(ntpNow);
-        Log.d("ntpTime",tmp);
+        if (result != RET_ERROR_SNTP)
+        {
+            callback.onTaskFinished(result);//MainActivityに値を返却
 
-//        if (result != RET_ERROR_SNTP)
-//        {
-//            m_ntpSabun = result;
-//            updateSabunTextView(0 - m_ntpSabun, m_ntpTextView, "NTP補正時間：");
-//        }
-//        else
-//        {
-//            m_ntpTextView.setText("NTPサーバー時刻取得失敗");
-//        }
+        }
+        else
+        {
+
+        }
     }
 }
-
