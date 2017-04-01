@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 
@@ -34,6 +35,9 @@ public class MainActivity extends AppCompatActivity implements AsyncTaskCallback
         public void onTaskFinished ( int delayTime){
             Intent intent = new Intent(getApplicationContext(), LocationActivity.class);
             intent.putExtra("Delay", delayTime);//端末の時間誤差を送信
+            EditText editText = (EditText) findViewById(R.id.peerIdName);
+            String tp = editText.getText().toString();
+            intent.putExtra("peerId",tp);//PeerIdを送信
             startActivity(intent);
         }
 }

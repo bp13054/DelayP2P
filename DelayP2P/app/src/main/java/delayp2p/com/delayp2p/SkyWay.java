@@ -44,7 +44,7 @@ public class SkyWay{
 
 
 
-    SkyWay(Context context){
+    SkyWay(Context context,String peerId){
         this.context = context;
 
         //////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ public class SkyWay{
 
         // PeerOption has many options. Please check the document. >> http://nttcom.github.io/skyway/docs/
 
-        _peer = new Peer(context, options);
+        _peer = new Peer(context,peerId, options);
         setPeerCallback(_peer);
 
         //////////////////////////////////////////////////////////////////////
@@ -227,7 +227,7 @@ public class SkyWay{
     //////////////////////////////////////////////////////////////////////////////////
     ///////////////  START: Set SkyWay peer Data connection callback   ///////////////
     //////////////////////////////////////////////////////////////////////////////////
-    void setDataCallback(DataConnection data) {
+    void setDataCallback(final DataConnection data) {
         // !!!: DataEvent/Open
         data.on(DataConnection.DataEventEnum.OPEN, new OnCallback() {
             @Override
@@ -245,7 +245,7 @@ public class SkyWay{
             public void onCallback(final Object object) {
                 String strValue = null;
 
-
+//String a = data.peer;
                 if (object instanceof String) {
 
                 } else if (object instanceof Double) {

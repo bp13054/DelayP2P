@@ -14,16 +14,21 @@
         android:id="@+id/measurment"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="計測開始"
+        android:text="端末の時間誤差を取得開始"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="96dp" />
 
-    <TextView
-        android:id="@+id/latlongtime"
+    <EditText
+        android:id="@+id/peerIdName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/measurment"
-        android:layout_marginTop="18dp"
-        android:text="緯度，経度，時間" />
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="14dp"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:hint="ボタンを押す前にPeerIdを入力" />
+
+
 </RelativeLayout>

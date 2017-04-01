@@ -25,14 +25,14 @@ import java.util.List;
  */
 public class Nifty{
 
-    private NCMBObject obj = new NCMBObject("GPSNifty");
-    private NCMBQuery<NCMBObject> query = new NCMBQuery<>("GPSNifty");
+    private NCMBObject obj = new NCMBObject("delayP2P");
+    private NCMBQuery<NCMBObject> query = new NCMBQuery<>("delayP2P");
     private ArrayList<NCMBObject> dataList = new ArrayList<NCMBObject>(); //自身の周辺にいるユーザ検索結果
 
     //Niftyのインスタンスを生成
     Nifty(Context context) {
         //ニフティを使うための初期設定
-        NCMB.initialize(context, "e027728d4daaafe3cf9605c0f316d43062951e9b2605466983915239006b1ea5", "67686993a6344499972ca0beef25a1dc0bbb45568265824caa92f021f6082dec");
+        NCMB.initialize(context, "d320b43c8fefe483ffef6b5334ffa4b40225346e56b0d33b0e9604102d21b588", "e29dffd33450bc4c3388960791d541cab1abca5e9ca7bf95463498e3dee787f0");
     }
 
 
@@ -49,12 +49,12 @@ public class Nifty{
         Log.d("位置情報", "検索開始");
         final Location location = geo;
         dataList.clear();
-        query.whereWithinKilometers("GeoPoint", location, distance);
+        query.whereWithinKilometers("Location", location, distance);
         List<NCMBObject> results = null;
         try {
             results = query.find();
         } catch (Exception e) {
-
+Log.d("",""+e);
         }
 
         return results;
@@ -62,8 +62,8 @@ public class Nifty{
 
     public void setDataNifty(String skyWayId, Location location) {
 
-        obj.put("SkyWayID", skyWayId);
-        obj.put("GeoPoint", location);
+        obj.put("peerId", skyWayId);
+        obj.put("Location", location);
 
         obj.saveInBackground(new DoneCallback() {
             @Override
