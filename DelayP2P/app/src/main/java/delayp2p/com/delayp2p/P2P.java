@@ -235,12 +235,12 @@ public class P2P{
                     long tmp = System.currentTimeMillis()-(long)delayTime;
                    // Location sendedLocation = (Location)o;
 String locationTime = (String)o;
-//                    DisplayToast toast = new DisplayToast(context);
+                   // DisplayToast toast = new DisplayToast(context);
                     SetDate d = new SetDate();
                     String t= d.convertLong(tmp);
-//                    toast.toast(dataConnection.peer,locationTime,t);
-                Log.d("debug","送信元peerId:"+dataConnection);
-                Log.d("debug","相手位置情報取得時間:"+locationTime);
+                   // toast.toast(dataConnection.peer,locationTime,t);
+                Log.d("debug","送信元peerId:"+dataConnection.peer);
+               Log.d("debug","相手位置情報取得時間:"+locationTime);
                 Log.d("debug","MYPCに送信された時間:"+t);
 
                 if(dataConnectionOpenCheck == DATACONNECTION_OPEN_CHECK) {

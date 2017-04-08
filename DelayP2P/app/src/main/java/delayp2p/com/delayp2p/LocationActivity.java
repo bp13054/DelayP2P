@@ -53,14 +53,14 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
         Log.d("端末の時間誤差とID","時間誤差:"+delayTime+"ID"+peerId);
         p2p = new P2P(this.getApplicationContext(),delayTime);
 
-////skywayの通信はActivityの動作に影響しないよう非同期処理で行う
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                p2p.createPeer(peerId);
-//            }
-//        }).start();
-        p2p.createPeer(peerId);
+//skywayの通信はActivityの動作に影響しないよう非同期処理で行う
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                p2p.createPeer(peerId);
+            }
+        }).start();
+       //p2p.createPeer(peerId);
 
 
         //実験を開始する
@@ -184,7 +184,7 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
         if(geo.getProvider().equals(LocationManager.GPS_PROVIDER)||
                 geo.getTime()-lastUpdate>30 ||
                 lastProvider.equals(LocationManager.NETWORK_PROVIDER)) { //GPSとNETから同時に位置情報を取得する誤作動を防ぐ
-            Log.d("test","2");
+            Log.d("test", "2");
             this.location = geo;
             if (geo == null) {
                 this.location.setLatitude(0);
@@ -192,60 +192,56 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
             }
 
 
-
-
             SetDate date = new SetDate();
             String tmp = date.convertLong(getLocation().getTime());
-            Log.d("GPSTime",tmp);
-            Log.d("MYTTime",t);
+            Log.d("GPSTime", tmp);
+            Log.d("MYTTime", t);
 
 
-            //latLongTime.setText("緯度:"+getLocation().getLatitude()+", 経度:"+getLocation().getLongitude()+", GPS時間:"+tmp+",端末時間"+t);
+            //latLongTime.setText("緯度:" + getLocation().getLatitude() + "\n経度:" + getLocation().getLongitude() + ",\nGPS時間:" + tmp + "\n端末時間:" + t);
 
 
-            getLocationUpdateCount++;//位置情報更新回数を+1する
-            if(getLocationUpdateCount >= LOCATION_UPDATE_COUNT){//位置情報が5回更新されたタイミングでNiftyから周辺端末のリストを取得し，自身の現在位置情報も送信，その後，ほかのpeerに自身の位置情報を送信(最初は強制的に呼ぶ)
-                Log.d("debug","count5の場合");
+            getLocationUpdateCount++;//位置情報更新回数を+1する.....................................................................................................................................................................................................................................
+            if (getLocationUpdateCount == LOCATION_UPDATE_COUNT) {//位置情報が5回更新されたタイミングでNiftyから周辺端末のリストを取得し，自身の現在位置情報も送信，その後，ほかのpeerに自身の位置情報を送信(最初は強制的に呼ぶ)
+                Log.d("debug", "count5の場合");
                 getLocationUpdateCount = 0;//カウント回数を初期化
-                        //////////////////////////////////////PeerListの更新//////////////////////////////
-                        Log.d("debug","PeerListの取得を開始");
-                        peerList = nifty.getDataNifty(location, 50000 / 1000);//500---検索範囲   1000---kmをmに変換するために割っている
-                        int num =  peerList.size(); //取得したデータ数
-                        //自身の情報を削除する
-                        for (int i = 0; i < num; i++) {
-                            Log.d("debug","peerId:"+peerList.get(i).getString("peerId"));
-                            if (peerId.equals(peerList.get(i).getString("peerId"))) {//SkywayIdとはNiftyサーバのフィールドの名前
-                                peerList.remove(i);
-                                num = num - 1;
-                                break;
-                            }
-                        }
-                        Log.d("debug","PeerListの取得を終了");
-                        //////////////////////////////////////PeerListの更新//////////////////////////////
+                //////////////////////////////////////PeerListの更新//////////////////////////////
+                Log.d("debug", "PeerListの取得を開始");
+                peerList = nifty.getDataNifty(location, 50000 / 1000);//500---検索範囲   1000---kmをmに変換するために割っている
+                int num = peerList.size(); //取得したデータ数
+                //自身の情報を削除する
+                for (int i = 0; i < num; i++) {
+                    Log.d("debug", "peerId:" + peerList.get(i).getString("peerId"));
+                    if (peerId.equals(peerList.get(i).getString("peerId"))) {//SkywayIdとはNiftyサーバのフィールドの名前
+                        peerList.remove(i);
+                        num = num - 1;
+                        break;
+                    }
+                }
+                Log.d("debug", "PeerListの取得を終了");
+                //////////////////////////////////////PeerListの更新//////////////////////////////
 
 
+                nifty.setDataNifty(peerId, location);//ここでNiftyサーバに位置情報を送信
 
-                        nifty.setDataNifty(peerId, location);//ここでNiftyサーバに位置情報を送信
 
-
-                        /////////////////////////////////////他Peerにデータを送信//////////////////////////////
-                        p2p.setMyLocation(location);
-                        for (int i = 0; i < peerList.size(); i++) {//peerの数
-                            final String ptrId = peerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
-                            Log.d("debug","送信先peerId:"+ptrId);
+                /////////////////////////////////////他Peerにデータを送信//////////////////////////////
+                p2p.setMyLocation(location);
+                for (int i = 0; i < peerList.size(); i++) {//peerの数
+                    final String ptrId = peerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
+                    Log.d("debug", "送信先peerId:" + ptrId);
 //                            new Thread(new Runnable() {
 //                                @Override
 //                                public void run() {
 //                                    p2p.connectPeer(ptrId);//setDataCallbackConnect(dataConnection)を呼ぶ
 //                                }
 //                            }).start();
-                            Thread thread = new Thread(new MyOperationP2P(ptrId));
-                            thread.start();
-                        }
-                        /////////////////////////////////////他Peerにデータを送信//////////////////////////////
-                    }
-            }else{
-                Log.d("debug","count5出ない場合"+getLocationUpdateCount);
+                    Thread thread = new Thread(new MyOperationP2P(ptrId));
+                    thread.start();
+                }
+                /////////////////////////////////////他Peerにデータを送信//////////////////////////////
+            } else {
+                Log.d("debug", "count5出ない場合" + getLocationUpdateCount);
                 /////////////////////////////////////他Peerにデータを送信//////////////////////////////
                 p2p.setMyLocation(location);
                 for (int i = 0; i < peerList.size(); i++) {//peerの数
@@ -262,6 +258,7 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
                 }
                 /////////////////////////////////////他Peerにデータを送信//////////////////////////////
             }
+        }
 
         lastUpdate=location.getTime();
         lastProvider=location.getProvider();
