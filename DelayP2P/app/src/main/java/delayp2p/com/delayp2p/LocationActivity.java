@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,6 +20,8 @@ import android.widget.Toast;
 import com.nifty.cloud.mb.core.NCMBObject;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LocationActivity extends AppCompatActivity implements LocationListener {
     final private static int LOCATION_UPDATE_COUNT = 5; //位置情報を5回取得したらNiftyに現在位置を登録．また，周辺ユーザ検索も実施
@@ -29,13 +32,14 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
     private int delayTime = 0;//初期値
     private String peerId = "unSetPeerId";//初期値
     private int getLocationUpdateCount = 4;//位置情報のカウント回数を記録
-    private List<NCMBObject> peerList;
+    private static  List<NCMBObject> peerList;
     private Location location = new Location(""); //自身の位置情報を保存するのに用いる
     private LocationManager mLocationManager;//位置情報を取得するのに用いる
     private long lastUpdate=0; //GPSとNETから重複して位置情報を取得してないか確認するのに用いる
     private String lastProvider="";//同様
     private TextView latLongTime;
     private TextView gosa;
+    ExecutorService exec = Executors.newCachedThreadPool();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -133,7 +137,7 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
     public void requestLocationUpdates() {
         if (mLocationManager!=null) {
             try {
-                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, this);
+                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 0, this);
                 mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0, this);
             }catch (SecurityException e) {
                 Log.e("PERMISSION_EXCEPTION",""+e);
@@ -177,12 +181,10 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
     /********************************************LocationListenerのoverride************************************************************/
     @Override
     public void onLocationChanged(Location geo) {
-        SetDate d = new SetDate();
-        String t = d.convertLong(System.currentTimeMillis());
 
-        Log.d("test","1");
-        if(geo.getProvider().equals(LocationManager.GPS_PROVIDER)||
-                geo.getTime()-lastUpdate>30 ||
+        Log.d("test", "1");
+        if (geo.getProvider().equals(LocationManager.GPS_PROVIDER) ||
+                geo.getTime() - lastUpdate > 30 ||
                 lastProvider.equals(LocationManager.NETWORK_PROVIDER)) { //GPSとNETから同時に位置情報を取得する誤作動を防ぐ
             Log.d("test", "2");
             this.location = geo;
@@ -192,10 +194,10 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
             }
 
 
-            SetDate date = new SetDate();
-            String tmp = date.convertLong(getLocation().getTime());
-            Log.d("GPSTime", tmp);
-            Log.d("MYTTime", t);
+            //SetDate date = new SetDate();
+            //String tmp = date.convertLong(getLocation().getTime());
+            // Log.d("GPSTime", tmp);
+            // Log.d("MYTTime", t);
 
 
             //latLongTime.setText("緯度:" + getLocation().getLatitude() + "\n経度:" + getLocation().getLongitude() + ",\nGPS時間:" + tmp + "\n端末時間:" + t);
@@ -205,9 +207,14 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
             if (getLocationUpdateCount == LOCATION_UPDATE_COUNT) {//位置情報が5回更新されたタイミングでNiftyから周辺端末のリストを取得し，自身の現在位置情報も送信，その後，ほかのpeerに自身の位置情報を送信(最初は強制的に呼ぶ)
                 Log.d("debug", "count5の場合");
                 getLocationUpdateCount = 0;//カウント回数を初期化
+                System.gc();//メモリの初期化
                 //////////////////////////////////////PeerListの更新//////////////////////////////
                 Log.d("debug", "PeerListの取得を開始");
                 peerList = nifty.getDataNifty(location, 50000 / 1000);//500---検索範囲   1000---kmをmに変換するために割っている
+                while (true) {
+                    if (peerList != null)
+                        break;
+                }
                 int num = peerList.size(); //取得したデータ数
                 //自身の情報を削除する
                 for (int i = 0; i < num; i++) {
@@ -227,25 +234,45 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
 
                 /////////////////////////////////////他Peerにデータを送信//////////////////////////////
                 p2p.setMyLocation(location);
+//                for (int i = 0; i < peerList.size(); i++) {//peerの数
+//                    final String ptrId = peerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
+//                    Log.d("debug", "送信先peerId:" + ptrId);
+//
+//                    Thread thread = new Thread(new MyOperationP2P(ptrId));
+//                    thread.start();
+                // }
+
+
+                //P2PMessageSendAsyncTask P2PTask = new P2PMessageSendAsyncTask(peerList, p2p, delayTime);
+                //P2PTask.execute();
+
+
+                //exec.submit(new P2PMessageSend(p2p));
                 for (int i = 0; i < peerList.size(); i++) {//peerの数
                     final String ptrId = peerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
                     Log.d("debug", "送信先peerId:" + ptrId);
-//                            new Thread(new Runnable() {
-//                                @Override
-//                                public void run() {
-//                                    p2p.connectPeer(ptrId);//setDataCallbackConnect(dataConnection)を呼ぶ
-//                                }
-//                            }).start();
-                    Thread thread = new Thread(new MyOperationP2P(ptrId));
-                    thread.start();
+                    p2p.connectPeer(ptrId);
+
                 }
+
+
                 /////////////////////////////////////他Peerにデータを送信//////////////////////////////
             } else {
                 Log.d("debug", "count5出ない場合" + getLocationUpdateCount);
                 /////////////////////////////////////他Peerにデータを送信//////////////////////////////
                 p2p.setMyLocation(location);
+                // P2PMessageSendAsyncTask P2PTask = new P2PMessageSendAsyncTask(peerList, p2p, delayTime);
+                // P2PTask.execute();
+
+               // exec.submit(new P2PMessageSend(p2p));
                 for (int i = 0; i < peerList.size(); i++) {//peerの数
                     final String ptrId = peerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
+                    Log.d("debug", "送信先peerId:" + ptrId);
+                    p2p.connectPeer(ptrId);
+
+                }
+//                for (int i = 0; i < peerList.size(); i++) {//peerの数
+//                    final String ptrId = peerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
 //                    new Thread(new Runnable() {
 //                        @Override
 //                        public void run() {
@@ -253,12 +280,14 @@ public class LocationActivity extends AppCompatActivity implements LocationListe
 //                            p2p.connectPeer(ptrId);//setDataCallbackConnect(dataConnection)を呼ぶ
 //                        }
 //                    }).start();
-                    Thread thread = new Thread(new MyOperationP2P(ptrId));
-                    thread.start();
-                }
+//                    Thread thread = new Thread(new MyOperationP2P(ptrId));
+//                    thread.start();
+                // }
+
                 /////////////////////////////////////他Peerにデータを送信//////////////////////////////
             }
         }
+
 
         lastUpdate=location.getTime();
         lastProvider=location.getProvider();
@@ -297,15 +326,61 @@ protected void onDestroy() {
 
 
 
-    public class MyOperationP2P implements Runnable {
-        String peerId;
-        MyOperationP2P(String peerId){
-            this.peerId = peerId;
-        }
-        public void run ( ) {
-            p2p.connectPeer(peerId);
-        }
-    }
+//    public class MyOperationP2P implements Runnable {
+//        String peerId;
+//        MyOperationP2P(String peerId){
+//            this.peerId = peerId;
+//        }
+//        public void run ( ) {
+//            p2p.connectPeer(peerId);
+//        }
+//    }
+
+//    static class P2PMessageSend implements  Runnable {
+//        P2P p2p;
+//        P2PMessageSend(P2P p2p){
+//            this.p2p = p2p;
+//        }
+//        public void run() {
+//            List<NCMBObject> copyPeerList = peerList;
+//            for (int i = 0; i < copyPeerList.size(); i++) {//peerの数
+//                final String ptrId = copyPeerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
+//                Log.d("debug", "送信先peerId:" + ptrId);
+//                p2p.connectPeer(ptrId);
+//
+//            }
+//
+//            // スレッドIDを出力する
+//            Log.d("debug","!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"+Thread.currentThread().getId());
+//        }
+//    }
+
+//    static class P2PMessageSendAsyncTask extends AsyncTask<Integer, Integer, Integer> {
+//        private List<NCMBObject> peerList;
+//        private P2P p2p; //SkyWayを使うクラス
+//        private int delayTime = 0;//初期値
+//
+//        public P2PMessageSendAsyncTask(List peerList, P2P p2p, int delayTime){
+//            this.peerList = peerList;
+//            this.p2p = p2p;
+//            this.delayTime = delayTime;
+//        }
+//
+//        @Override
+//        protected Integer doInBackground(Integer... tmp) {
+//            SetDate d = new SetDate();
+//            String t = d.convertLong(System.currentTimeMillis());
+//
+//            for (int i = 0; i < peerList.size(); i++) {//peerの数
+//                final String ptrId = peerList.get(i).getString("peerId");//"SkyWayID"とは通信先のpeerId
+//                Log.d("debug", "送信先peerId:" + ptrId);
+//                p2p.connectPeer(ptrId);
+//
+//            }
+//            return 0;
+//        }
+  //  }
+
 
 
 }

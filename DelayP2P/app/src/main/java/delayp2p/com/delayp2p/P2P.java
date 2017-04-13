@@ -48,6 +48,7 @@ public class P2P{
         PeerOption options = new PeerOption();
         options.key = "e10651a5-82a3-4621-8e13-d75af5d78c22";
         options.domain = "bp13054.com";
+        options.debug = Peer.DebugLevelEnum.ALL_LOGS;
         options.turn = true;
         peer = new Peer(context, myId, options);
         setPeerCallback(peer);
@@ -89,7 +90,7 @@ public class P2P{
         /* debug timer */
         boolean result = dataConnection.send(msg);
         if (result) {   // 送信に成功した場合
-            Log.d("debug", "--------------------------------------- [You]" + msg + " --------------------------------------------");
+            Log.d("debug", "--------------------------------------- [位置情報の取得時間（sendMsgで）呼び出し]" + msg + " --------------------------------------------");
         } else {    // 送信に失敗した場合
             Log.d("debug", "--------------------------------------- [System]Error. --------------------------------------------");
         }
