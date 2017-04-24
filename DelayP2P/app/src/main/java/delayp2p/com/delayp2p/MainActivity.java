@@ -33,11 +33,16 @@ public class MainActivity extends AppCompatActivity implements AsyncTaskCallback
 
         @Override
         public void onTaskFinished ( int delayTime){
-            Intent intent = new Intent(getApplicationContext(), LocationActivity.class);
-            intent.putExtra("Delay", delayTime);//端末の時間誤差を送信
-            EditText editText = (EditText) findViewById(R.id.peerIdName);
-            String tp = editText.getText().toString();
-            intent.putExtra("peerId",tp);//PeerIdを送信
-            startActivity(intent);
+            if(delayTime == 0){
+                SntpTimeUpdateAsyncTask task = new SntpTimeUpdateAsyncTask(this);
+                task.execute();
+            }else {
+                Intent intent = new Intent(getApplicationContext(), LocationActivity.class);
+                intent.putExtra("Delay", delayTime);//端末の時間誤差を送信
+                EditText editText = (EditText) findViewById(R.id.peerIdName);
+                String tp = editText.getText().toString();
+                intent.putExtra("peerId", tp);//PeerIdを送信
+                startActivity(intent);
+            }
         }
 }

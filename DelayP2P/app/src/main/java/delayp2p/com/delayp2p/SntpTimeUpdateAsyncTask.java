@@ -41,7 +41,7 @@ public class SntpTimeUpdateAsyncTask extends AsyncTask<String, String, Integer> 
         SntpClient sntp = new SntpClient();
         int result = RET_ERROR_SNTP;
         for(int count = 1;count<=10;count++) {
-            if (sntp.requestTime(url, 10000)) {
+            if (sntp.requestTime(url, 1000)) {
                 long ntpNow = sntp.getNtpTime() + SystemClock.elapsedRealtime() - sntp.getNtpTimeReference();
                 long localNow = Calendar.getInstance().getTime().getTime();
                 result = result + (int) (localNow - ntpNow);
